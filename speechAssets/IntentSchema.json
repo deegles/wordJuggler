@@ -1,0 +1,37 @@
+{
+  "intents": [
+    {
+      "intent": "ChangeDifficultyIntent",
+      "slots": [
+        {
+          "name": "difficulty",
+          "type": "DIFFICULTY"
+        }
+      ]
+    },
+    {
+      "intent": "WordGuessIntent",
+      "slots": [
+        {
+          "name": "word",
+          "type": "WORDS"
+        }
+      ]
+    },
+    {
+      "intent": "AMAZON.YesIntent"
+    },
+    {
+      "intent": "AMAZON.NoIntent"
+    },
+    {
+      "intent": "AMAZON.StartOverIntent"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    }
+  ]
+}

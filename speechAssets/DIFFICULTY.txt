@@ -1,0 +1,6 @@
+very easy
+easy
+normal
+medium
+hard
+very hard
