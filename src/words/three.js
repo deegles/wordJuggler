@@ -32,7 +32,6 @@ module.exports = Object.freeze({
         "boy",
         "bug",
         "bus",
-        "but",
         "buy",
         "cab",
         "can",
@@ -205,7 +204,6 @@ module.exports = Object.freeze({
         "why",
         "win",
         "wow",
-        "yes",
         "yet",
         "you"
     ]
