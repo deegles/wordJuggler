@@ -46,6 +46,7 @@ var easterEggs = {
 Object.assign(easterEggs, difficultyOpts);
 
 var exitWords = ['no', 'know', 'cancel', 'stop', 'exit', 'quit', 'quite', 'undo'];
+var repeatWords = ['repeat', 'again'];
 
 var difficultyDescriptions = {
     veryEasy: 'three',
@@ -69,6 +70,16 @@ exports.handler = function (event, context, callback) {
     var fail = context.fail;
 
     context.succeed = function (response) {
+        if (response && response.response && response.response.outputSpeech) {
+            console.log('Speech.... ' + response.response.outputSpeech.ssml ||
+                response.response.outputSpeech);
+        }
+
+        if (response && response.response && response.response.reprompt) {
+            console.log('Reprompt.. ' + response.response.reprompt.outputSpeech.ssml ||
+                response.response.reprompt.outputSpeech);
+        }
+
         console.log('Response:\n' + JSON.stringify(response, null, 4));
         cloudWatch.putEventLogs(userId, () => {
             succeed(response);
@@ -92,7 +103,9 @@ exports.handler = function (event, context, callback) {
 
     alexa.appId = appId;
     alexa.dynamoDBTableName = 'wordHighLowGuessUsers';
-    alexa.registerHandlers(newSessionHandlers, guessModeHandlers, startGameHandlers, guessAttemptHandlers, confirmPromptHandlers);
+    //alexa.saveBeforeResponse = true;
+    alexa.registerHandlers(newSessionHandlers, guessModeHandlers,
+        startGameHandlers, guessAttemptHandlers, confirmPromptHandlers);
 
     var log = console.log;
     var cloudWatch = logger();
@@ -128,9 +141,8 @@ exports.handler = function (event, context, callback) {
         }
     });
 
-    console.log('-----START-----');
+    console.log('-----START----- Container Log: ' + context.logGroupName + '/' + context.logStreamName);
     console.log('Event:\n' + JSON.stringify(event, null, 4));
-    console.log('Container Log: ' + context.logGroupName + '/' + context.logStreamName);
 
     cloudWatch.describeLogStream(userId, function () {
         alexa.execute();
@@ -196,6 +208,10 @@ var newSessionHandlers = {
         this.attributes['lastEventTime'] = new Date().getTime();
         var difficulty = override;
 
+        if (override) {
+            console.log('Difficulty override: ' + override);
+        }
+
         if (this.event.request.intent && this.event.request.intent.slots.difficulty) {
             difficulty = this.event.request.intent.slots.difficulty.value;
         }
@@ -219,7 +235,10 @@ var newSessionHandlers = {
 
         console.log('Raw word detected: ' + guessWord);
 
-        if (Object.keys(easterEggs).indexOf(guessWord) > -1) {
+        if(this.event.session && this.event.session['new'] && this.attributes['targetWord']) {
+            this.handler.state = states.GUESSMODE;
+            this.emitWithState('WordGuessIntent');
+        } else if (Object.keys(easterEggs).indexOf(guessWord) > -1) {
             this.emit('ChangeDifficultyIntent', guessWord);
         } else if (guessWord === 'help') {
             console.log('this should never happen!!');
@@ -261,6 +280,9 @@ var startGameHandlers = Alexa.CreateStateHandler(states.STARTMODE, {
             'Would you like to start a new game?';
         var reprompt = 'Say yes to start the game, or say change difficulty';
 
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
         this.emit(':ask', speech, reprompt);
     },
     'AMAZON.YesIntent': function () {
@@ -276,6 +298,10 @@ var startGameHandlers = Alexa.CreateStateHandler(states.STARTMODE, {
         var speech = 'Great! I\'m thinking of a ' + difficultyDescriptions[this.attributes['difficulty']] +
             ' letter word. Try saying a word to start the game.';
         var reprompt = 'Try saying a ' + difficultyDescriptions[this.attributes['difficulty']] + ' letter word.';
+
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
         this.emit(':ask', speech, reprompt);
     },
     'AMAZON.NoIntent': function () {
@@ -297,6 +323,9 @@ var startGameHandlers = Alexa.CreateStateHandler(states.STARTMODE, {
         this.attributes['endedSessionCount'] += 1;
         this.emit(':saveState', true);
     },
+    'AMAZON.RepeatIntent': function () {
+        this.emit(':ask', this.attributes['speech'], this.attributes['reprompt']);
+    },
     'WordGuessIntent': function () {
         var guessWord = this.event.request.intent.slots.word.value;
 
@@ -307,12 +336,19 @@ var startGameHandlers = Alexa.CreateStateHandler(states.STARTMODE, {
         } else if (guessWord === 'help') {
             console.log('this should never happen!!');
             this.emitWithState('AMAZON.HelpIntent');
+        } else if (guessWord && repeatWords.indexOf(guessWord.toLowerCase()) >= 0) {
+            console.log('caught repeat intent...');
+            return this.emitWithState('AMAZON.RepeatIntent');
         } else {
             this.emitWithState('Unhandled');
         }
     },
     'Unhandled': function () {
         var message = 'Say yes to start a game or no to exit, or say help.';
+
+        this.attributes['speech'] = message;
+        this.attributes['reprompt'] = message;
+
         this.emit(':ask', message, message);
     }
 });
@@ -360,11 +396,15 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
 
         var reprompt = 'You can also say start over to begin a new game.';
 
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
         this.emit(':askWithCard', speech, reprompt);
     },
     'WordGuessIntent': function () {
         this.attributes['lastEventTime'] = new Date().getTime();
         var guessWord = this.event.request.intent.slots.word.value;
+        var target = this.attributes['targetWord'];
 
         if (guessWord) {
             guessWord = guessWord.toLowerCase();
@@ -372,18 +412,22 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
             if (allWords.indexOf(guessWord) === -1) {
                 saveWord(guessWord);
             }
-            console.log('user guessed: ' + guessWord);
+            console.log('target: ' + target + ', user guessed: ' + guessWord);
         }
 
         if (guessWord && exitWords.indexOf(guessWord.toLowerCase()) >= 0) {
             var speech = 'You said <p>' + guessWord + '</p> do you want to keep playing?';
             var reprompt = 'Say yes to continue playing or no to quit the game. Say start over to start a new game.';
 
+            this.attributes['speech'] = speech;
+            this.attributes['reprompt'] = reprompt;
+
             this.handler.state = states.CONFIRM_QUIT;
             return this.emit(':ask', speech, reprompt);
+        } else if (guessWord && repeatWords.indexOf(guessWord.toLowerCase()) >= 0) {
+            console.log('caught repeat intent...');
+            return this.emitWithState('AMAZON.RepeatIntent');
         }
-
-        var target = this.attributes['targetWord'];
 
         if (guessWord > target) { // 'aac' > 'aaa'
             this.attributes['guessCount']++;
@@ -394,6 +438,7 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
         } else if (guessWord === target) {
             this.attributes['guessCount']++;
             delete this.attributes['lastGuess'];
+            delete this.attributes['targetWord'];
             this.handler.state = states.STARTMODE;
             this.emit('JustRight', guessWord);
         } else {
@@ -414,6 +459,9 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
             'any time by saying <p>start over</p>';
         var reprompt = 'Try saying a word, <p>start over<p>, or <p>change difficulty</p>';
 
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
         this.emit(':ask', speech, reprompt);
     },
     'AMAZON.StartOverIntent': function () {
@@ -424,8 +472,14 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
         var speech = 'You said <p>cancel</p> do you want to keep playing?';
         var reprompt = 'Say yes to continue playing or no to quit the game. Say start over to start a new game.';
 
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
         this.handler.state = states.CONFIRM_QUIT;
         return this.emit(':ask', speech, reprompt);
+    },
+    'AMAZON.RepeatIntent': function () {
+        this.emit(':ask', this.attributes['speech'], this.attributes['reprompt']);
     },
     'SessionEndedRequest': function () {
         console.log('session ended!');
@@ -433,7 +487,10 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
         this.emit(':saveState', true);
     },
     'Unhandled': function () {
-        this.emit(':ask', 'Sorry, I didn\'t get that. Try saying a word.', 'Try saying any word.');
+        this.attributes['speech'] = 'Sorry, I didn\'t get that. Try saying a word.';
+        this.attributes['reprompt'] = 'Try saying any word.';
+
+        this.emit(':ask', this.attributes['speech'], this.attributes['reprompt']);
     }
 });
 
@@ -449,15 +506,31 @@ var confirmPromptHandlers = Alexa.CreateStateHandler(states.CONFIRM_QUIT, {
     },
     'AMAZON.YesIntent': function () {
         this.handler.state = states.GUESSMODE;
-        this.emit(':ask', 'Ok, what is your guess?', 'Say any word to continue.');
+
+        var speech = 'Ok, what is your guess?';
+        var reprompt = 'Say any word to continue.';
+
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
+        this.emit(':ask', speech, reprompt);
     },
     'AMAZON.HelpIntent': function () {
-        this.emit(':ask', 'Say yes to continue your game. You can also say <p>no</p> to exit or ' +
-            '<p>start over</p> to begin a new game.');
+        var speech = 'Say yes to continue your game. You can also say <p>no</p> to exit or ' +
+            '<p>start over</p> to begin a new game.';
+        var reprompt = 'say <p>start over</p> to begin a new game.';
+
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
+        this.emit(':ask', speech, reprompt);
     },
     'AMAZON.StartOverIntent': function () {
         this.handler.state = states.STARTMODE;
         this.emitWithState('AMAZON.YesIntent');
+    },
+    'AMAZON.RepeatIntent': function () {
+        this.emit(':ask', this.attributes['speech'], this.attributes['reprompt']);
     },
     'WordGuessIntent': function () {
         var guessWord = this.event.request.intent.slots.word.value;
@@ -479,8 +552,10 @@ var confirmPromptHandlers = Alexa.CreateStateHandler(states.CONFIRM_QUIT, {
         this.emit(':saveState', true);
     },
     'Unhandled': function () {
-        this.emit(':ask', 'Sorry, I didn\'t get that. Say yes to keep playing or no to quit.',
-            'You can also say help.');
+        this.attributes['speech'] = 'Sorry, I didn\'t get that. Say yes to keep playing or no to quit.';
+        this.attributes['reprompt'] = 'You can also say help.';
+
+        this.emit(':ask', this.attributes['speech'], this.attributes['reprompt']);
     }
 });
 
@@ -508,7 +583,13 @@ var guessAttemptHandlers = {
         var clue = 'Try saying a word that would be ranked later than <p>' + val.toString() +
             '</p>  in an alphabetical list.';
 
-        this.emit(':askWithCard', '<p>' + val.toString() + '</p> comes before.', clue, cardTitle, (cardText + clue));
+        var speech = '<p>' + val.toString() + '</p> comes before.';
+        var reprompt = clue;
+
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
+        this.emit(':askWithCard', speech, reprompt, cardTitle, (cardText + clue));
     },
     'TooLow': function (val) {
         var cardText = '';
@@ -530,7 +611,13 @@ var guessAttemptHandlers = {
         var clue = 'Try saying a word that would be ranked earlier than <p>' + val.toString() +
             '</p> in an alphabetical list.';
 
-        this.emit(':askWithCard', '<p>' + val.toString() + '</p> comes after.', clue, cardTitle, (cardText + clue));
+        var speech = '<p>' + val.toString() + '</p> comes after.';
+        var reprompt = clue;
+
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
+        this.emit(':askWithCard', speech, reprompt, cardTitle, (cardText + clue));
     },
     'JustRight': function (val) {
         var cardTitle = 'You win!';
@@ -552,14 +639,24 @@ var guessAttemptHandlers = {
             winText += 'You have won ' + this.attributes['gamesWon'].toString() + ' games. ';
         }
 
-        this.emit(':askWithCard', '<p>' + val.toString() + '</p> is correct! ' + winText +
-            ' Would you like to play a new game?', 'Say yes to start a new game, or no to end the game.',
-            cardTitle, cardText);
+        var speech = '<p>' + val.toString() + '</p> is correct! ' + winText +
+            ' Would you like to play a new game?';
+        var reprompt = 'Say yes to start a new game, or no to end the game.';
+
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
+        this.emit(':askWithCard', speech, reprompt, cardTitle, cardText);
 
     },
     'NotAWord': function () {
-        this.emit(':ask', 'Sorry, I didn\'t get that. Try saying a word.',
-            'Try saying a ' + difficultyDescriptions[this.attributes['difficulty']] + ' letter word, ');
+        var speech = 'Sorry, I didn\'t get that. Try saying a word.';
+        var reprompt = 'Try saying a ' + difficultyDescriptions[this.attributes['difficulty']] + ' letter word.';
+
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
+        this.emit(':ask', speech, reprompt);
     }
 };
 

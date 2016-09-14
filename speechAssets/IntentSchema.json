@@ -25,6 +25,9 @@
       "intent": "AMAZON.NoIntent"
     },
     {
+      "intent": "AMAZON.RepeatIntent"
+    },
+    {
       "intent": "AMAZON.StartOverIntent"
     },
     {
