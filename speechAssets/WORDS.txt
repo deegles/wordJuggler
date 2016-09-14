@@ -143,7 +143,6 @@ could
 count
 court
 cover
-crack
 craft
 crash
 crawl
@@ -230,7 +229,6 @@ flash
 fleet
 flesh
 float
-flood
 floor
 flour
 fluid
@@ -473,7 +471,6 @@ scene
 scent
 scope
 score
-screw
 seize
 sense
 serve
@@ -565,7 +562,6 @@ storm
 story
 stove
 straw
-strip
 study
 stuff
 style
@@ -683,9 +679,7 @@ young
 yours
 youth
 able
-acid
 aide
-aids
 ally
 also
 amid
@@ -701,7 +695,6 @@ back
 bake
 ball
 band
-bank
 bare
 barn
 base
@@ -1126,7 +1119,6 @@ role
 roll
 roof
 room
-root
 rope
 rose
 ruin
@@ -1171,7 +1163,6 @@ skip
 slam
 slap
 slip
-slot
 slow
 snap
 snow
@@ -1274,7 +1265,6 @@ wash
 wave
 weak
 wear
-weed
 week
 well
 west
@@ -1358,7 +1348,6 @@ bicycle
 billion
 biology
 blanket
-bombing
 breathe
 briefly
 british
@@ -1396,7 +1385,6 @@ closest
 clothes
 cluster
 coastal
-cocaine
 collect
 college
 combine
@@ -1546,7 +1534,6 @@ founder
 fragile
 frankly
 freedom
-fucking
 funding
 funeral
 gallery
@@ -1883,7 +1870,6 @@ tourist
 towards
 trading
 traffic
-tragedy
 trailer
 trainer
 transit
@@ -2013,7 +1999,6 @@ bottle
 bottom
 bounce
 branch
-breast
 breath
 breeze
 bridge
@@ -2482,7 +2467,6 @@ sensor
 series
 settle
 severe
-sexual
 shadow
 shared
 shorts
