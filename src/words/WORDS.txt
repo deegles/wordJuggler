@@ -15,6 +15,7 @@ ahead
 aisle
 alarm
 album
+alexa
 alien
 alike
 alive
@@ -693,7 +694,6 @@ away
 baby
 back
 bake
-ball
 band
 bare
 barn
