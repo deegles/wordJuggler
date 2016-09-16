@@ -2,29 +2,20 @@
 var Alexa = require('alexa-sdk');
 var appId = 'amzn1.ask.skill.0fcabd62-b4b3-479c-a9a7-561d098999fc';
 var logger = require('./logger');
+var fmt = require('util').format;
 var NEWGAME_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
 var NEWGAME_PROMPT_TIMEOUT_MS = 5 * 60 * 1000;
-var arr = [];
-var wordLists = {
-    veryEasy: require('./words/three').words,
-    easy: arr.concat(
-        require('./words/four').words),
-    normal: arr.concat(
-        require('./words/three').words,
-        require('./words/four').words,
-        require('./words/five')).sort(),
-    medium: arr.concat(
-        require('./words/four').words,
-        require('./words/five').words,
-        require('./words/six').words).sort(),
-    hard: arr.concat(
-        require('./words/five').words,
-        require('./words/six').words,
-        require('./words/seven').words).sort(),
-    veryHard: require('./words/seven').words
-};
+var words = require('fs').readFileSync('./words/WORDS.txt').toString().split('\n');
+var wordCache = {};
 
-var allWords = arr.concat(wordLists['normal'], require('./words/six').words, require('./words/seven').words);
+var difficultyRanges = {
+    veryEasy: {min: 3, max: 3},
+    easy: {min: 4, max: 4},
+    normal: {min: 3, max: 5},
+    medium: {min: 4, max: 6},
+    hard: {min: 5, max: 7},
+    veryHard: {min: 7, max: 7}
+};
 
 var difficultyOpts = {
     'very easy': 'veryEasy',
@@ -39,6 +30,8 @@ var easterEggs = {
     'eleven': 'veryHard',
     '11': 'veryHard',
     'ludicrous': 'veryHard',
+    'the usual': 'easy',
+    'default': 'easy',
     'baby': 'veryEasy',
     'randy': 'veryHard'
 };
@@ -165,12 +158,14 @@ var newSessionHandlers = {
             this.attributes['guesses'] = [];
 
             this.handler.state = states.STARTMODE;
-            return this.emit(':ask', 'Welcome to Word Juggler. In this game you try to guess a secret word ' +
+            var text = 'Welcome to Word Juggler. In this game you try to guess a secret word ' +
                 'using only clues about it\'s alphabetical ordering. When you guess a word, I will tell you if it ' +
-                'comes before or after, alphabetically. Your last five guesses are displayed in the companion app. ' +
-                'You can change the difficulty of the game by saying <p>change difficulty</p> ' +
-                'Do you want to start a new game?',
-                'Say yes to start the game or help for more instructions.');
+                'comes before or after, alphabetically. Your last five guesses are displayed %s. ' +
+                'You can change the difficulty of the game by saying %schange difficulty%s ' +
+                'Do you want to start a new game?';
+            return this.emit(':askWithCard', fmt(text, 'in the companion app', '<p>', '</p>'),
+                'Say yes to start the game or help for more instructions.',
+                'Word Juggler', fmt(text, 'here', '"', '"'));
         }
 
         this.attributes['lastEventTime'] = new Date().getTime();
@@ -235,7 +230,7 @@ var newSessionHandlers = {
 
         console.log('Raw word detected: ' + guessWord);
 
-        if(this.event.session && this.event.session['new'] && this.attributes['targetWord']) {
+        if (this.event.session && this.event.session['new'] && this.attributes['targetWord']) {
             this.handler.state = states.GUESSMODE;
             this.emitWithState('WordGuessIntent');
         } else if (Object.keys(easterEggs).indexOf(guessWord) > -1) {
@@ -409,7 +404,7 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
         if (guessWord) {
             guessWord = guessWord.toLowerCase();
             this.attributes['lastGuess'] = guessWord;
-            if (allWords.indexOf(guessWord) === -1) {
+            if (words.indexOf(guessWord) === -1) {
                 saveWord(guessWord);
             }
             console.log('target: ' + target + ', user guessed: ' + guessWord);
@@ -583,13 +578,16 @@ var guessAttemptHandlers = {
         var clue = 'Try saying a word that would be ranked later than <p>' + val.toString() +
             '</p>  in an alphabetical list.';
 
+        var cardClue = 'The secret word is ranked later than "' + val.toString() +
+            '" in an alphabetical list.\n';
+
         var speech = '<p>' + val.toString() + '</p> comes before.';
         var reprompt = clue;
 
         this.attributes['speech'] = speech;
         this.attributes['reprompt'] = reprompt;
 
-        this.emit(':askWithCard', speech, reprompt, cardTitle, (cardText + clue));
+        this.emit(':askWithCard', speech, reprompt, cardTitle, (cardClue + cardText));
     },
     'TooLow': function (val) {
         var cardText = '';
@@ -611,18 +609,19 @@ var guessAttemptHandlers = {
         var clue = 'Try saying a word that would be ranked earlier than <p>' + val.toString() +
             '</p> in an alphabetical list.';
 
+        var cardClue = 'The secret word is ranked earlier than "' + val.toString() +
+            '" in an alphabetical list.\n';
+
         var speech = '<p>' + val.toString() + '</p> comes after.';
         var reprompt = clue;
 
         this.attributes['speech'] = speech;
         this.attributes['reprompt'] = reprompt;
 
-        this.emit(':askWithCard', speech, reprompt, cardTitle, (cardText + clue));
+        this.emit(':askWithCard', speech, reprompt, cardTitle, (cardClue + cardText));
     },
     'JustRight': function (val) {
         var cardTitle = 'You win!';
-        this.attributes['guesses'] = [];
-        this.attributes['guessCount'] = 0;
 
         this.handler.state = states.STARTMODE;
         this.attributes['gamesWon']++;
@@ -632,6 +631,9 @@ var guessAttemptHandlers = {
             '\nGuess count: ' + this.attributes['guessCount'];
 
         var winText = '';
+
+        this.attributes['guesses'] = [];
+        this.attributes['guessCount'] = 0;
 
         if (this.attributes['gamesWon'] === 1) {
             winText += 'You have won ' + this.attributes['gamesWon'].toString() + ' game. ';
@@ -661,8 +663,18 @@ var guessAttemptHandlers = {
 };
 
 function selectWord(difficulty) {
-    var wordList = wordLists[difficulty];
+    var wordList = getWordlist(difficulty);
     return wordList[Math.floor(Math.random() * wordList.length)];
+}
+
+function getWordlist(difficulty) {
+    if (!wordCache[difficulty]) {
+        wordCache[difficulty] = words.filter(function (word) {
+            return word.length >= difficultyRanges[difficulty]['min'] &&
+                word.length <= difficultyRanges[difficulty]['max'];
+        });
+    }
+    return wordCache[difficulty];
 }
 
 function saveWord(word) {
