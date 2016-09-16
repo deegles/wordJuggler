@@ -174,7 +174,10 @@ var newSessionHandlers = {
         this.attributes['lastEventTime'] = new Date().getTime();
         var eventString = '';
 
-        if (this.event.request.type === 'LaunchRequest') {
+        if (this.attributes['targetWord']) {
+            this.handler.state = states.GUESSMODE;
+            return this.emitWithState('NewSession');
+        } else if (this.event.request.type === 'LaunchRequest') {
             eventString = 'LaunchRequest';
         } else if (this.event.request.type === 'IntentRequest') {
             eventString = this.event.request.intent.name;
@@ -216,6 +219,7 @@ var newSessionHandlers = {
 
         if (Object.keys(easterEggs).indexOf(difficulty) > -1) {
             this.attributes['difficulty'] = easterEggs[difficulty];
+            console.log('starting new game at difficulty:' + this.attributes['difficulty']);
             this.handler.state = states.STARTMODE;
             this.emitWithState('AMAZON.YesIntent');
         } else {
@@ -393,6 +397,7 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
 
         if (diff >= NEWGAME_TIMEOUT_MS) {
             console.log('Game Timed Out');
+            delete this.attributes['targetWord']
             return this.emit('NewSession');
         }
 
@@ -512,7 +517,7 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
         return this.emit(':ask', speech, reprompt);
     },
     'AMAZON.RepeatIntent': function () {
-        if(!this.attributes['speech'] || !this.attributes['reprompt']) {
+        if (!this.attributes['speech'] || !this.attributes['reprompt']) {
             this.emitWithState('LaunchRequest');
         } else {
             this.emit(':ask', this.attributes['speech'], this.attributes['reprompt']);
