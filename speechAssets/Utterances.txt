@@ -1,0 +1,31 @@
+AMAZON.StartOverIntent begin a new game
+AMAZON.StartOverIntent begin again
+AMAZON.StartOverIntent new game
+AMAZON.StartOverIntent restart
+AMAZON.StartOverIntent start a new game
+AMAZON.StartOverIntent start again
+
+ChangeDifficultyIntent change difficulty
+ChangeDifficultyIntent change difficulty to {difficulty}
+ChangeDifficultyIntent on {difficulty}
+ChangeDifficultyIntent play a {difficulty} game
+ChangeDifficultyIntent play an {difficulty} game
+ChangeDifficultyIntent play on {difficulty}
+ChangeDifficultyIntent set difficulty
+ChangeDifficultyIntent set difficulty to {difficulty}
+ChangeDifficultyIntent set to {difficulty}
+ChangeDifficultyIntent start a new game on {difficulty}
+ChangeDifficultyIntent start a {difficulty} game
+ChangeDifficultyIntent start an {difficulty} game
+ChangeDifficultyIntent {difficulty}
+
+WhoAmIIntent who am i
+WhoAmIIntent who i am
+
+WordGuessIntent guess {word}
+WordGuessIntent how about {word}
+WordGuessIntent i guess {word}
+WordGuessIntent is it {word}
+WordGuessIntent try {word}
+WordGuessIntent {word}
+WordGuessIntent {word} i guess
