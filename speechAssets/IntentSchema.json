@@ -19,6 +19,9 @@
       ]
     },
     {
+      "intent": "WhoAmIIntent"
+    },
+    {
       "intent": "AMAZON.YesIntent"
     },
     {

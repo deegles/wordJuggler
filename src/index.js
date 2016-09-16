@@ -3,6 +3,8 @@ var Alexa = require('alexa-sdk');
 var appId = 'amzn1.ask.skill.0fcabd62-b4b3-479c-a9a7-561d098999fc';
 var logger = require('./logger');
 var fmt = require('util').format;
+var crypto = require('crypto');
+var sha = crypto.createHash('sha512');
 var NEWGAME_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
 var NEWGAME_PROMPT_TIMEOUT_MS = 5 * 60 * 1000;
 var words = require('fs').readFileSync('./words/WORDS.txt').toString().split('\n');
@@ -59,6 +61,7 @@ exports.handler = function (event, context, callback) {
     } else {
         userId = event.session.user.userId;
     }
+
     var succeed = context.succeed;
     var fail = context.fail;
 
@@ -257,6 +260,32 @@ var newSessionHandlers = {
         this.handler.state = states.STARTMODE;
         this.emitWithState('AMAZON.HelpIntent');
     },
+    'WhoAmIIntent': function () {
+        var userId = '';
+
+        if (this.event.context) {
+            userId = this.event.context.System.user.userId;
+        } else {
+            userId = this.event.session.user.userId;
+        }
+
+        var uniqueId = getUniqueIdString(userId);
+
+        console.log('Unique ID requested: ' + uniqueId + ' for user ' + userId);
+
+        var speech = 'Your unique eye dee is: ' + uniqueId.split(' ').join('<break time="250ms"/> ') + '. ';
+        var reprompt = '<break time="500ms"/>Mention it in your review or email ' +
+            'to help Word Juggler troubleshoot your issue.';
+
+        var cardTitle = 'Word Juggler';
+        var cardText = 'Your unique ID for troubleshooting is: ' + uniqueId + '. \n\nMention it in your review or ' +
+            'email to wordjuggler@deegles.co to help us pinpoint your issue.';
+
+        this.attributes['speech'] = speech;
+        this.attributes['reprompt'] = reprompt;
+
+        this.emit(':askWithCard', speech + reprompt, reprompt, cardTitle, cardText);
+    },
     'Unhandled': function () {
         this.emit('LaunchRequest');
     }
@@ -338,6 +367,9 @@ var startGameHandlers = Alexa.CreateStateHandler(states.STARTMODE, {
             this.emitWithState('Unhandled');
         }
     },
+    'WhoAmIIntent': function () {
+        this.emit('WhoAmIIntent');
+    },
     'Unhandled': function () {
         var message = 'Say yes to start a game or no to exit, or say help.';
 
@@ -394,7 +426,7 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
         this.attributes['speech'] = speech;
         this.attributes['reprompt'] = reprompt;
 
-        this.emit(':askWithCard', speech, reprompt);
+        this.emit(':ask', speech, reprompt);
     },
     'WordGuessIntent': function () {
         this.attributes['lastEventTime'] = new Date().getTime();
@@ -481,6 +513,9 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
         this.attributes['endedSessionCount'] += 1;
         this.emit(':saveState', true);
     },
+    'WhoAmIIntent': function () {
+        this.emit('WhoAmIIntent');
+    },
     'Unhandled': function () {
         this.attributes['speech'] = 'Sorry, I didn\'t get that. Try saying a word.';
         this.attributes['reprompt'] = 'Try saying any word.';
@@ -545,6 +580,9 @@ var confirmPromptHandlers = Alexa.CreateStateHandler(states.CONFIRM_QUIT, {
         console.log('session ended!');
         this.attributes['endedSessionCount'] += 1;
         this.emit(':saveState', true);
+    },
+    'WhoAmIIntent': function () {
+        this.emit('WhoAmIIntent');
     },
     'Unhandled': function () {
         this.attributes['speech'] = 'Sorry, I didn\'t get that. Say yes to keep playing or no to quit.';
@@ -675,6 +713,20 @@ function getWordlist(difficulty) {
         });
     }
     return wordCache[difficulty];
+}
+
+function getUniqueIdString(userId) {
+    var wordCount = 4;
+    sha.update(userId);
+    var bytes = sha.digest();
+    var value = new Array(wordCount);
+    var len = words.length;
+
+    for (var i = 0; i <= wordCount; i++) {
+        value[i] = words[bytes[bytes.length - i] % len];
+    }
+
+    return value.join(' ').toUpperCase();
 }
 
 function saveWord(word) {
