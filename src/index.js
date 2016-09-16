@@ -490,12 +490,12 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
     'AMAZON.HelpIntent': function () {
         var options = ['very easy', 'easy', 'normal', 'medium', 'hard', 'very hard'];
         var option = options[Math.floor(Math.random() * options.length)];
-        var speech = 'I will think of a ' + difficultyDescriptions[this.attributes['difficulty']] + ' letter word, ' +
+        var speech = 'I am thinking of a ' + difficultyDescriptions[this.attributes['difficulty']] + ' letter word, ' +
             'try to guess what it is and I will tell you if your guess comes before or after, alphabetically. Check ' +
             'the companion app to see your previous guesses. You' +
-            ' can also change the difficulty by saying, <p>change difficulty to ' + option + '</p> or start over at ' +
-            'any time by saying <p>start over</p>';
-        var reprompt = 'Try saying a word, <p>start over<p>, or <p>change difficulty</p>';
+            ' can also change the difficulty by saying, "change difficulty to ' + option + '" or start over at ' +
+            'any time by saying "start over"';
+        var reprompt = 'Try saying a word, "start over", or "change difficulty"';
 
         this.attributes['speech'] = speech;
         this.attributes['reprompt'] = reprompt;
