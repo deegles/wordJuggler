@@ -329,6 +329,9 @@ var startGameHandlers = Alexa.CreateStateHandler(states.STARTMODE, {
         this.emit(':ask', speech, reprompt);
     },
     'AMAZON.NoIntent': function () {
+        delete this.attributes['speech'];
+        delete this.attributes['reprompt'];
+
         this.emit(':tell', 'Ok, see you next time!');
     },
     'AMAZON.CancelIntent': function () {
@@ -344,6 +347,9 @@ var startGameHandlers = Alexa.CreateStateHandler(states.STARTMODE, {
     },
     'SessionEndedRequest': function () {
         console.log('session ended!');
+        delete this.attributes['speech'];
+        delete this.attributes['reprompt'];
+
         this.attributes['endedSessionCount'] += 1;
         this.emit(':saveState', true);
     },
@@ -506,10 +512,17 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
         return this.emit(':ask', speech, reprompt);
     },
     'AMAZON.RepeatIntent': function () {
-        this.emit(':ask', this.attributes['speech'], this.attributes['reprompt']);
+        if(!this.attributes['speech'] || !this.attributes['reprompt']) {
+            this.emitWithState('LaunchRequest');
+        } else {
+            this.emit(':ask', this.attributes['speech'], this.attributes['reprompt']);
+        }
     },
     'SessionEndedRequest': function () {
         console.log('session ended!');
+        delete this.attributes['speech'];
+        delete this.attributes['reprompt'];
+
         this.attributes['endedSessionCount'] += 1;
         this.emit(':saveState', true);
     },
@@ -529,6 +542,9 @@ var confirmPromptHandlers = Alexa.CreateStateHandler(states.CONFIRM_QUIT, {
         this.emit('NewSession');
     },
     'AMAZON.NoIntent': function () {
+        delete this.attributes['speech'];
+        delete this.attributes['reprompt'];
+
         this.emit(':tell', 'Ok, let\'s continue later!');
     },
     'AMAZON.CancelIntent': function () {
@@ -577,6 +593,9 @@ var confirmPromptHandlers = Alexa.CreateStateHandler(states.CONFIRM_QUIT, {
         }
     },
     'SessionEndedRequest': function () {
+        delete this.attributes['speech'];
+        delete this.attributes['reprompt'];
+
         console.log('session ended!');
         this.attributes['endedSessionCount'] += 1;
         this.emit(':saveState', true);
