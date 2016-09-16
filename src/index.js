@@ -235,7 +235,7 @@ var newSessionHandlers = {
             this.emitWithState('WordGuessIntent');
         } else if (Object.keys(easterEggs).indexOf(guessWord) > -1) {
             this.emit('ChangeDifficultyIntent', guessWord);
-        } else if (guessWord === 'help') {
+        } else if (guessWord.indexOf('help') > -1) {
             console.log('this should never happen!!');
             this.emit('AMAZON.HelpIntent');
         } else if (guessWord && exitWords.indexOf(guessWord.toLowerCase()) >= 0) {
@@ -328,7 +328,7 @@ var startGameHandlers = Alexa.CreateStateHandler(states.STARTMODE, {
 
         if (guessWord && exitWords.indexOf(guessWord.toLowerCase()) >= 0) {
             this.emitWithState('AMAZON.NoIntent');
-        } else if (guessWord === 'help') {
+        } else if (guessWord.indexOf('help') > -1) {
             console.log('this should never happen!!');
             this.emitWithState('AMAZON.HelpIntent');
         } else if (guessWord && repeatWords.indexOf(guessWord.toLowerCase()) >= 0) {
@@ -534,7 +534,7 @@ var confirmPromptHandlers = Alexa.CreateStateHandler(states.CONFIRM_QUIT, {
 
         if (guessWord && exitWords.indexOf(guessWord.toLowerCase()) >= 0) {
             this.emitWithState('AMAZON.NoIntent');
-        } else if (guessWord === 'help') {
+        } else if (guessWord.indexOf('help') > -1) {
             console.log('this should never happen!!');
             this.emitWithState('AMAZON.HelpIntent');
         } else {

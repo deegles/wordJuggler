@@ -1557,7 +1557,6 @@ harvest
 healthy
 hearing
 heavily
-helpful
 herself
 highway
 himself
