@@ -267,10 +267,10 @@ var newSessionHandlers = {
     'WhoAmIIntent': function () {
         var userId = '';
 
-        if (this.event.context) {
-            userId = this.event.context.System.user.userId;
-        } else {
+        if (this.event.session) {
             userId = this.event.session.user.userId;
+        } else {
+            userId = this.event.context.System.user.userId;
         }
 
         var uniqueId = getUniqueIdString(userId);
