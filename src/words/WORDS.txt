@@ -308,7 +308,6 @@ juror
 kneel
 knife
 knock
-known
 label
 labor
 large
@@ -1879,7 +1878,6 @@ uncover
 undergo
 unhappy
 uniform
-unknown
 unusual
 usually
 utility

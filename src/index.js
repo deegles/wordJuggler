@@ -4,7 +4,6 @@ var appId = 'amzn1.ask.skill.0fcabd62-b4b3-479c-a9a7-561d098999fc';
 var logger = require('./logger');
 var fmt = require('util').format;
 var crypto = require('crypto');
-var sha = crypto.createHash('sha512');
 var NEWGAME_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
 var NEWGAME_PROMPT_TIMEOUT_MS = 5 * 60 * 1000;
 var words = require('fs').readFileSync('./words/WORDS.txt').toString().split('\n');
@@ -40,8 +39,8 @@ var easterEggs = {
 
 Object.assign(easterEggs, difficultyOpts);
 
-var exitWords = ['no', 'know', 'cancel', 'stop', 'exit', 'quit', 'quite', 'undo'];
-var repeatWords = ['repeat', 'again'];
+var exitWords = ['no', 'know', 'known', 'cancel', 'stop', 'exit', 'quit', 'quite', 'undo'];
+var repeatWords = ['repeat', 'again', 'repeat that'];
 
 var difficultyDescriptions = {
     veryEasy: 'three',
@@ -98,7 +97,7 @@ exports.handler = function (event, context, callback) {
     });
 
     alexa.appId = appId;
-    alexa.dynamoDBTableName = 'wordHighLowGuessUsers';
+    alexa.dynamoDBTableName = 'deeglescoSkillUserSessions';
     //alexa.saveBeforeResponse = true;
     alexa.registerHandlers(newSessionHandlers, guessModeHandlers,
         startGameHandlers, guessAttemptHandlers, confirmPromptHandlers);
@@ -155,6 +154,7 @@ var newSessionHandlers = {
     'NewSession': function () {
         if (!this.attributes['createDate']) {
             this.attributes['createDate'] = new Date().getTime();
+            appId ? this.attributes['skillId'] = appId : undefined;
             this.attributes['endedSessionCount'] = 0;
             this.attributes['gamesWon'] = 0;
             this.attributes['difficulty'] = 'easy';
@@ -282,7 +282,7 @@ var newSessionHandlers = {
             'to help Word Juggler troubleshoot your issue.';
 
         var cardTitle = 'Word Juggler';
-        var cardText = 'Your unique ID for troubleshooting is: ' + uniqueId + '. \n\nMention it in your review or ' +
+        var cardText = 'Your unique ID for troubleshooting is:\n\n' + uniqueId + '. \n\nMention it in your review or ' +
             'email to wordjuggler@deegles.co to help us pinpoint your issue.';
 
         this.attributes['speech'] = speech;
@@ -397,7 +397,7 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
 
         if (diff >= NEWGAME_TIMEOUT_MS) {
             console.log('Game Timed Out');
-            delete this.attributes['targetWord']
+            delete this.attributes['targetWord'];
             return this.emit('NewSession');
         }
 
@@ -703,8 +703,7 @@ var guessAttemptHandlers = {
             winText += 'You have won ' + this.attributes['gamesWon'].toString() + ' games. ';
         }
 
-        var speech = '<p>' + val.toString() + '</p> is correct! ' + winText +
-            ' Would you like to play a new game?';
+        var speech = '<p>' + val.toString() + '</p> is correct! ' + winText + ' Would you like to play a new game?';
         var reprompt = 'Say yes to start a new game, or no to end the game.';
 
         this.attributes['speech'] = speech;
@@ -741,8 +740,7 @@ function getWordlist(difficulty) {
 
 function getUniqueIdString(userId) {
     var wordCount = 4;
-    sha.update(userId);
-    var bytes = sha.digest();
+    var bytes = crypto.createHash('sha512').update(userId).digest();
     var value = new Array(wordCount);
     var len = words.length;
 
