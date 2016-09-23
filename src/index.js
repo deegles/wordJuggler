@@ -175,6 +175,7 @@ var newSessionHandlers = {
         var eventString = '';
 
         if (this.attributes['targetWord']) {
+            console.log('New session, target word is set: ' + this.attributes['targetWord']);
             this.handler.state = states.GUESSMODE;
             return this.emitWithState('NewSession');
         } else if (this.event.request.type === 'LaunchRequest') {
@@ -240,6 +241,9 @@ var newSessionHandlers = {
         if (this.event.session && this.event.session['new'] && this.attributes['targetWord']) {
             this.handler.state = states.GUESSMODE;
             this.emitWithState('WordGuessIntent');
+        } else if (this.event.session && this.event.session['new'] && !this.attributes['targetWord']) {
+            this.handler.state = states.STARTMODE;
+            this.emitWithState('LaunchRequest');
         } else if (Object.keys(easterEggs).indexOf(guessWord) > -1) {
             this.emit('ChangeDifficultyIntent', guessWord);
         } else if (guessWord.indexOf('help') > -1) {
@@ -343,6 +347,7 @@ var startGameHandlers = Alexa.CreateStateHandler(states.STARTMODE, {
         this.emitWithState('AMAZON.NoIntent');
     },
     'AMAZON.StartOverIntent': function () {
+        logAbandon(this.attributes['targetWord'], this.attributes['guessCount'] || 0, 'USER_INITIATED');
         this.emitWithState('AMAZON.YesIntent');
     },
     'ChangeDifficultyIntent': function () {
@@ -397,6 +402,7 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
 
         if (diff >= NEWGAME_TIMEOUT_MS) {
             console.log('Game Timed Out');
+            logAbandon(this.attributes['targetWord'], this.attributes['guessCount'] || 0, 'TIMEOUT');
             delete this.attributes['targetWord'];
             return this.emit('NewSession');
         }
@@ -447,9 +453,7 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
         if (guessWord) {
             guessWord = guessWord.toLowerCase();
             this.attributes['lastGuess'] = guessWord;
-            if (words.indexOf(guessWord) === -1) {
-                saveWord(guessWord);
-            }
+            logGuess(guessWord);
             console.log('target: ' + target + ', user guessed: ' + guessWord);
         }
 
@@ -578,6 +582,7 @@ var confirmPromptHandlers = Alexa.CreateStateHandler(states.CONFIRM_QUIT, {
     },
     'AMAZON.StartOverIntent': function () {
         this.handler.state = states.STARTMODE;
+        logAbandon(this.attributes['targetWord'], this.attributes['guessCount'], 'USER_INITIATED');
         this.emitWithState('AMAZON.YesIntent');
     },
     'AMAZON.RepeatIntent': function () {
@@ -694,6 +699,8 @@ var guessAttemptHandlers = {
 
         var winText = '';
 
+        logWin(val, this.attributes['guessCount']);
+
         this.attributes['guesses'] = [];
         this.attributes['guessCount'] = 0;
 
@@ -751,11 +758,36 @@ function getUniqueIdString(userId) {
     return value.join(' ').toUpperCase();
 }
 
-function saveWord(word) {
+function logGuess(word) {
     var obj = {
-        eventType: 'NewWord',
+        eventType: 'Guess',
         word: word,
         length: word.length,
+        timestamp: new Date().getTime()
+    };
+
+    console.log(JSON.stringify(obj));
+}
+
+function logWin(word, guessCount) {
+    var obj = {
+        eventType: 'Win',
+        word: word,
+        length: word.length,
+        guesses: guessCount,
+        timestamp: new Date().getTime()
+    };
+
+    console.log(JSON.stringify(obj));
+}
+
+function logAbandon(word, guessCount, reason) {
+    var obj = {
+        eventType: 'Abandon',
+        word: word,
+        length: word.length,
+        guesses: guessCount,
+        reason: reason,
         timestamp: new Date().getTime()
     };
 
