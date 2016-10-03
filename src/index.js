@@ -281,7 +281,8 @@ var newSessionHandlers = {
 
         console.log('Unique ID requested: ' + uniqueId + ' for user ' + userId);
 
-        var speech = 'Your unique eye dee is: ' + uniqueId.split(' ').join('<break time="250ms"/> ') + '. ';
+        var speech = 'Your unique eye dee is: <break time="250ms"/> ' +
+            uniqueId.split(' ').join('<break time="250ms"/> ') + '. ';
         var reprompt = '<break time="500ms"/>Mention it in your review or email ' +
             'to help Word Juggler troubleshoot your issue.';
 
@@ -629,7 +630,8 @@ var guessAttemptHandlers = {
         var cardText = '';
         var cardTitle = 'Your guess: ' + val;
 
-        this.attributes['guesses'].push(val);
+        var guessText = `${val.toUpperCase()} is before the secret word.\n\n`;
+        this.attributes['guesses'].push(guessText);
 
         if (this.attributes['guesses'].length > 1) {
             for (var i = 0; i < this.attributes['guesses'].length - 1; i++) {
@@ -645,8 +647,8 @@ var guessAttemptHandlers = {
         var clue = 'Try saying a word that would be ranked later than <p>' + val.toString() +
             '</p>  in an alphabetical list.';
 
-        var cardClue = 'The secret word is ranked later than "' + val.toString() +
-            '" in an alphabetical list.\n';
+        var cardClue = 'The secret word is ' + difficultyDescriptions[this.attributes['difficulty']] +
+            ' letters long.\n\n' + guessText;
 
         var speech = '<audio src="https://s3.amazonaws.com/deeglescosounds/incorrect_high.mp3" /> ' +
             val.toString() + ' comes before.';
@@ -661,7 +663,8 @@ var guessAttemptHandlers = {
         var cardText = '';
         var cardTitle = 'Your guess: ' + val;
 
-        this.attributes['guesses'].push(val);
+        var guessText = `${val.toUpperCase()} is after the secret word.\n\n`;
+        this.attributes['guesses'].push(guessText);
 
         if (this.attributes['guesses'].length > 1) {
             for (var i = 0; i < this.attributes['guesses'].length - 1; i++) {
@@ -677,8 +680,8 @@ var guessAttemptHandlers = {
         var clue = 'Try saying a word that would be ranked earlier than <p>' + val.toString() +
             '</p> in an alphabetical list.';
 
-        var cardClue = 'The secret word is ranked earlier than "' + val.toString() +
-            '" in an alphabetical list.\n';
+        var cardClue = 'The secret word is ' + difficultyDescriptions[this.attributes['difficulty']] +
+            ' letters long.\n\n' + guessText;
 
         var speech = '<audio src="https://s3.amazonaws.com/deeglescosounds/incorrect_low.mp3" />' +
             val.toString() + ' comes after.';
