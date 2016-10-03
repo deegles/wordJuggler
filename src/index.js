@@ -39,7 +39,7 @@ var easterEggs = {
 
 Object.assign(easterEggs, difficultyOpts);
 
-var exitWords = ['no', 'know', 'known', 'cancel', 'stop', 'exit', 'quit', 'quite', 'undo'];
+var exitWords = ['no', 'now', 'know', 'known', 'cancel', 'stop', 'exit', 'quit', 'quite', 'undo'];
 var repeatWords = ['repeat', 'again', 'repeat that'];
 
 var difficultyDescriptions = {
