@@ -164,9 +164,9 @@ var newSessionHandlers = {
             var text = 'Welcome to Word Juggler. In this game you try to guess a secret word ' +
                 'using only clues about it\'s alphabetical ordering. When you guess a word, I will tell you if it ' +
                 'comes before or after, alphabetically. Your last five guesses are displayed %s. ' +
-                'You can change the difficulty of the game by saying %schange difficulty%s ' +
-                'Do you want to start a new game?';
-            return this.emit(':askWithCard', fmt(text, 'in the companion app', '<p>', '</p>'),
+                'You can change the difficulty of the game by saying %schange difficulty%s ';
+            var prompt = 'Do you want to start a new game?';
+            return this.emit(':askWithCard', fmt(text, 'in the companion app', '<p>', '</p>') + prompt,
                 'Say yes to start the game or help for more instructions.',
                 'Word Juggler', fmt(text, 'here', '"', '"'));
         }
