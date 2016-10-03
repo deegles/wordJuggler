@@ -752,7 +752,7 @@ function getWordlist(difficulty) {
 }
 
 function getUniqueIdString(userId) {
-    var wordCount = 4;
+    var wordCount = 3;
     var bytes = crypto.createHash('sha512').update(userId).digest();
     var value = new Array(wordCount);
     var len = words.length;
