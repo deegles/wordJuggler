@@ -648,7 +648,8 @@ var guessAttemptHandlers = {
         var cardClue = 'The secret word is ranked later than "' + val.toString() +
             '" in an alphabetical list.\n';
 
-        var speech = '<p>' + val.toString() + '</p> comes before.';
+        var speech = '<audio src="https://s3.amazonaws.com/deeglescosounds/incorrect_high.mp3" /> ' +
+            val.toString() + ' comes before.';
         var reprompt = clue;
 
         this.attributes['speech'] = speech;
@@ -679,7 +680,8 @@ var guessAttemptHandlers = {
         var cardClue = 'The secret word is ranked earlier than "' + val.toString() +
             '" in an alphabetical list.\n';
 
-        var speech = '<p>' + val.toString() + '</p> comes after.';
+        var speech = '<audio src="https://s3.amazonaws.com/deeglescosounds/incorrect_low.mp3" />' +
+            val.toString() + ' comes after.';
         var reprompt = clue;
 
         this.attributes['speech'] = speech;
@@ -710,7 +712,8 @@ var guessAttemptHandlers = {
             winText += 'You have won ' + this.attributes['gamesWon'].toString() + ' games. ';
         }
 
-        var speech = '<p>' + val.toString() + '</p> is correct! ' + winText + ' Would you like to play a new game?';
+        var speech = '<audio src="https://s3.amazonaws.com/deeglescosounds/correct.mp3" /> ' + val.toString() +
+            ' is correct! ' + winText + ' Would you like to play a new game?';
         var reprompt = 'Say yes to start a new game, or no to end the game.';
 
         this.attributes['speech'] = speech;
