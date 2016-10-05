@@ -451,13 +451,6 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
         var guessWord = this.event.request.intent.slots.word.value;
         var target = this.attributes['targetWord'];
 
-        if (guessWord) {
-            guessWord = guessWord.toLowerCase();
-            this.attributes['lastGuess'] = guessWord;
-            logGuess(guessWord);
-            console.log('target: ' + target + ', user guessed: ' + guessWord);
-        }
-
         if (guessWord && exitWords.indexOf(guessWord.toLowerCase()) >= 0) {
             var speech = 'You said <p>' + guessWord + '</p> do you want to keep playing?';
             var reprompt = 'Say yes to continue playing or no to quit the game. Say start over to start a new game.';
@@ -470,6 +463,13 @@ var guessModeHandlers = Alexa.CreateStateHandler(states.GUESSMODE, {
         } else if (guessWord && repeatWords.indexOf(guessWord.toLowerCase()) >= 0) {
             console.log('caught repeat intent...');
             return this.emitWithState('AMAZON.RepeatIntent');
+        }
+
+        if (guessWord) {
+            guessWord = guessWord.toLowerCase();
+            this.attributes['lastGuess'] = guessWord;
+            logGuess(guessWord);
+            console.log('target: ' + target + ', user guessed: ' + guessWord);
         }
 
         if (guessWord > target) { // 'aac' > 'aaa'
