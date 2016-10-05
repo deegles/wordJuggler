@@ -768,7 +768,7 @@ function logGuess(word) {
     var obj = {
         eventType: 'Guess',
         word: word,
-        length: word.length,
+        length: word ? word.length : undefined,
         timestamp: new Date().getTime()
     };
 
@@ -779,7 +779,7 @@ function logWin(word, guessCount) {
     var obj = {
         eventType: 'Win',
         word: word,
-        length: word.length,
+        length: word ? word.length : undefined,
         guesses: guessCount,
         timestamp: new Date().getTime()
     };
@@ -791,7 +791,7 @@ function logAbandon(word, guessCount, reason) {
     var obj = {
         eventType: 'Abandon',
         word: word,
-        length: word.length,
+        length: word ? word.length : undefined,
         guesses: guessCount,
         reason: reason,
         timestamp: new Date().getTime()
