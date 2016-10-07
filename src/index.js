@@ -630,14 +630,14 @@ var guessAttemptHandlers = {
         var cardText = '';
         var cardTitle = 'Your guess: ' + val;
 
-        var guessText = `${val.toUpperCase()} is before the secret word.\n\n`;
+        var guessText = `${val.toUpperCase()} is before the secret word.\n`;
         this.attributes['guesses'].push(guessText);
 
         if (this.attributes['guesses'].length > 1) {
             for (var i = 0; i < this.attributes['guesses'].length - 1; i++) {
                 cardText = this.attributes['guesses'][i] + '\n' + cardText;
             }
-            cardText = 'Previous:\n' + cardText;
+            cardText = '\nPrevious:\n' + cardText;
         }
 
         if (this.attributes['guesses'].length >= 6) {
