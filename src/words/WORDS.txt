@@ -1186,7 +1186,6 @@ stay
 stem
 step
 stir
-stop
 such
 suit
 sure
